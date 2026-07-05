@@ -42,13 +42,16 @@ type SearchQuery struct {
 }
 
 type SearchOffer struct {
-	OfferID       string  `json:"offer_id"`
-	DecisionID    string  `json:"decision_id"`
-	Position      int     `json:"position"`
-	Price         float64 `json:"price"`
-	MarkupFactor  float64 `json:"markup_factor"`
-	Experiment    string  `json:"experiment,omitempty"`
-	Variant       string  `json:"variant,omitempty"`
+	OfferID      string  `json:"offer_id"`
+	DecisionID   string  `json:"decision_id"`
+	Position     int     `json:"position"`
+	Price        float64 `json:"price"`
+	MarkupFactor float64 `json:"markup_factor"`
+	// Experiment and Variant emit explicitly (empty string when the
+	// underlying decision had no arm identity) so downstream schema
+	// consumers see a stable column set — per ADR-0002 §Field additivity.
+	Experiment string `json:"experiment"`
+	Variant    string `json:"variant"`
 }
 
 // Partition returns the Hive partition segment for search events. All
@@ -74,11 +77,13 @@ type BookingEvent struct {
 
 	Price        float64 `json:"price"`
 	MarkupFactor float64 `json:"markup_factor"`
-	Revenue      float64 `json:"revenue,omitempty"`
-	Currency     string  `json:"currency,omitempty"`
+	Revenue      float64 `json:"revenue,omitempty"` // only on booking.purchased
+	Currency     string  `json:"currency"`
 
-	Experiment string `json:"experiment,omitempty"`
-	Variant    string `json:"variant,omitempty"`
+	// Experiment and Variant emit on every event so per-arm analytics
+	// does not need to re-join to the decision event (ADR-0003).
+	Experiment string `json:"experiment"`
+	Variant    string `json:"variant"`
 
 	// Phase + TimeoutKind are populated on booking.timeout only.
 	Phase       string `json:"phase,omitempty"`
