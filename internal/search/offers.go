@@ -16,6 +16,9 @@ import (
 	"net/http"
 	"time"
 
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
+
 	"github.com/helmedeiros/funnel-sim/internal/funnelevents"
 )
 
@@ -197,6 +200,10 @@ func (c *HTTPDecideClient) Decide(ctx context.Context, req DecideRequest) (Decid
 		return DecideResponse{}, err
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
+	// Inject the W3C traceparent so markup-svc joins the incoming trace.
+	// A missing / no-op propagator leaves headers unchanged, so this is
+	// safe when --otel-enabled is off.
+	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(httpReq.Header))
 	client := c.HTTPClient
 	if client == nil {
 		client = http.DefaultClient

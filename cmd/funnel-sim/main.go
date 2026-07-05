@@ -172,8 +172,10 @@ func main() {
 	// the full handler wall-clock.
 	handler := httpapi.WithCorrelationID(
 		httpapi.WithTraceContext(
-			httpapi.WithAccessLog(log, *env,
-				httpMetricsWrap(mux),
+			httpapi.WithServerSpan(
+				httpapi.WithAccessLog(log, *env,
+					httpMetricsWrap(mux),
+				),
 			),
 		),
 	)
